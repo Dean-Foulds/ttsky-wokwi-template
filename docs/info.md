@@ -30,29 +30,75 @@ considered important by their weight:
 
     S = S(wi AND xi)  for i = 0..7,  S in {0,1,...,8}
 
-### Pipeline Architecture
+### The journey of a signal through the four stages
 
-The circuit is divided into 4 stages separated by D flip-flop pipeline registers.
-A new classification result is produced every clock cycle after the initial 4-cycle latency.
+**Stage 1 - Input latch**
+The 8 input bits arrive on the pins (imagine 8 tiny switches: on or off).
+On the rising clock edge they are frozen into flip-flops so the rest of the
+circuit has a stable snapshot to work with.
 
-#### Stage 1 - Input latch
-8 D flip-flops capture the input vector x[7:0] on the rising clock edge.
+**Stage 2 - AND array**
+Each frozen input bit is multiplied by its corresponding weight bit.
+Because everything is binary (0 or 1), multiplication is just an AND gate —
+the simplest possible gate on silicon. Eight AND gates fire in parallel,
+each asking "is this feature both present in the input AND considered
+important by the weight?"
 
-#### Stage 2 - AND array
-8 AND gates compute the element-wise product of latched inputs and stored weights:
+**Stage 3 - Adder tree**
+The eight 0/1 results from stage 2 are added together using a tree of
+half-adders arranged in 3 levels. This produces a single 4-bit number
+between 0 and 8 — the weighted vote count, exactly like tallying up how
+many committee members said yes.
 
-    p[i] = x[i] AND w[i]  for i = 0..7
-
-#### Stage 3 - Adder tree
-A 3-level Wallace tree of half-adders sums the 8 product bits into a 4-bit count.
 Each half-adder computes:
-
     sum   = A XOR B
     carry = A AND B
 
-#### Stage 4 - Threshold comparator
-The 4-bit sum is compared against the stored threshold theta.
-If S >= theta the fire signal is asserted.
+**Stage 4 - Threshold comparator**
+The vote count is compared to a programmable threshold theta.
+If sum >= theta, the neuron fires (fire = 1).
+If not, it stays silent (fire = 0).
+This is the actual classification decision — a single bit that says yes or no.
+
+### Why is this genuinely AI?
+
+This is the McCulloch-Pitts neuron — the 1943 mathematical model that started
+the entire field of neural networks. Every modern AI model, from GPT to image
+classifiers, is built from billions of these exact computations. This project
+implements the fundamental atom of machine intelligence directly in silicon,
+with no CPU, no software, no operating system — just logic gates switching
+at the speed of electrons.
+
+### Why is the pipeline the ambitious part?
+
+Without the pipeline, the circuit would need to finish all four stages within
+a single clock cycle — meaning the clock speed is bottlenecked by the slowest
+stage (the adder tree). With the pipeline registers between each stage, four
+different input samples are processed simultaneously:
+
+    Cycle 1:  Sample A -> Stage 1
+    Cycle 2:  Sample A -> Stage 2,  Sample B -> Stage 1
+    Cycle 3:  Sample A -> Stage 3,  Sample B -> Stage 2,  Sample C -> Stage 1
+    Cycle 4:  Sample A -> Stage 4,  Sample B -> Stage 3,  Sample C -> Stage 2,  Sample D -> Stage 1
+    Cycle 5:  Result A out!         Sample B -> Stage 4,  ...
+
+After the initial 4-cycle warmup, a new classification result is produced
+on every single clock tick.
+
+### Pipeline Architecture Diagram
+
+![Pipeline Architecture](pipelined_perceptron_architecture.svg)
+
+## Pin Mapping
+
+| Pin | Direction | Function |
+|-----|-----------|----------|
+| clk | in | System clock |
+| rst_n | in | Active-low reset |
+| ui_in[7:0] | in | Input features or load data |
+| uio[0] | in | Mode: 0 = load weights, 1 = infer |
+| uo_out[7] | out | fire - classification result |
+| uo_out[3:0] | out | sum[3:0] - raw weighted sum |
 
 ## How to test
 
