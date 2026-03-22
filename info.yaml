@@ -6,7 +6,7 @@ project:
   description: "A 16-neuron binary neural network inference layer. Each neuron has 8 programmable binary weights and a 4-bit threshold, processing an 8-bit input vector simultaneously to produce a 16-bit classification output."
   language:    "Verilog"
   clock_hz:    10000000
-  tiles:       "1x1"
+  tiles:       "1x2"
   top_module:  "tt_um_dean_foulds_perceptron"
   source_files:
     - "tt_um_dean_foulds_perceptron.v"
