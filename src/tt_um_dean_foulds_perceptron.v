@@ -98,14 +98,14 @@ module tt_um_dean_foulds_perceptron (
 
             // Adder tree: count active products (popcount)
             assign sums[n] =
-                products[n][0] +
-                products[n][1] +
-                products[n][2] +
-                products[n][3] +
-                products[n][4] +
-                products[n][5] +
-                products[n][6] +
-                products[n][7];
+                {3'b0, products[n][0]} +
+                {3'b0, products[n][1]} +
+                {3'b0, products[n][2]} +
+                {3'b0, products[n][3]} +
+                {3'b0, products[n][4]} +
+                {3'b0, products[n][5]} +
+                {3'b0, products[n][6]} +
+                {3'b0, products[n][7]};
 
             // Threshold comparator: fire if sum >= threshold
             assign fire[n] = (sums[n] >= thresholds[n]) ? 1'b1 : 1'b0;
