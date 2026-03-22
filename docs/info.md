@@ -1,128 +1,145 @@
-# 4-Stage Pipelined Binary Perceptron
+# 16-Neuron Binary Neural Network
 
 ## How it works
 
-This project implements a **binary perceptron** — the fundamental building block
-of all neural networks — as a 4-stage pipelined digital circuit on a Tiny Tapeout
-tile. It classifies an 8-bit input vector every clock cycle after an initial 4-cycle
-warmup latency.
+This project implements a **Binary Neural Network (BNN) inference layer** directly in silicon — 16 independent binary perceptron neurons that each classify the same 8-bit input vector simultaneously, producing a 16-bit output in a single clock cycle.
 
-### The Perceptron Model
+### The mathematical model
 
-The perceptron computes a weighted sum of binary inputs and compares it to a
-threshold to produce a binary classification:
+Each neuron `n` computes a weighted sum of binary inputs and compares it to a programmable threshold:
 
-    y = 1  if  S(wi . xi) >= theta
-    y = 0  otherwise
+```
+y[n] = 1   if   sum( w[n][i] AND x[i] )  >=  theta[n]
+y[n] = 0   otherwise
 
-Where:
-- xi are the 8 input feature bits (0 or 1)
-- wi are the 8 stored binary weights (0 or 1)
-- theta is the 4-bit programmable threshold
-- y is the classification output (fire signal)
+where:
+  x[i]    in {0,1}  — input feature bit i  (i = 0..7)
+  w[n][i] in {0,1}  — stored weight for neuron n, bit i
+  theta[n] in {0..8} — 4-bit programmable threshold for neuron n
+  y[n]               — fire signal (classification output)
+```
 
-Since all values are binary, multiplication reduces to a logical AND:
+Because all values are binary, multiplication reduces to a logical AND:
 
-    wi . xi = wi AND xi
+```
+w[n][i] * x[i]  =  w[n][i] AND x[i]
+```
 
-The weighted sum counts how many input bits are both present AND
-considered important by their weight:
+The weighted sum counts how many input bits are both active AND considered important:
 
-    S = S(wi AND xi)  for i = 0..7,  S in {0,1,...,8}
+```
+S[n] = sum( w[n][i] AND x[i] )   for i = 0..7,   S[n] in {0,1,...,8}
+```
 
-### The journey of a signal through the four stages
+The neuron fires when this count meets or exceeds its threshold:
 
-**Stage 1 - Input latch**
-The 8 input bits arrive on the pins (imagine 8 tiny switches: on or off).
-On the rising clock edge they are frozen into flip-flops so the rest of the
-circuit has a stable snapshot to work with.
+```
+y[n] = ( S[n] >= theta[n] )
+```
 
-**Stage 2 - AND array**
-Each frozen input bit is multiplied by its corresponding weight bit.
-Because everything is binary (0 or 1), multiplication is just an AND gate —
-the simplest possible gate on silicon. Eight AND gates fire in parallel,
-each asking "is this feature both present in the input AND considered
-important by the weight?"
+### Inside a single neuron
 
-**Stage 3 - Adder tree**
-The eight 0/1 results from stage 2 are added together using a tree of
-half-adders arranged in 3 levels. This produces a single 4-bit number
-between 0 and 8 — the weighted vote count, exactly like tallying up how
-many committee members said yes.
+**Stage 1 — AND array (8 gates)**
 
-Each half-adder computes:
-    sum   = A XOR B
-    carry = A AND B
+Each input bit is multiplied by its corresponding weight bit:
 
-**Stage 4 - Threshold comparator**
-The vote count is compared to a programmable threshold theta.
-If sum >= theta, the neuron fires (fire = 1).
-If not, it stays silent (fire = 0).
-This is the actual classification decision — a single bit that says yes or no.
+```
+p[i] = x[i] AND w[n][i]   for i = 0..7
+```
 
-### Why is this genuinely AI?
+**Stage 2 — Adder tree (popcount)**
 
-This is the McCulloch-Pitts neuron — the 1943 mathematical model that started
-the entire field of neural networks. Every modern AI model, from GPT to image
-classifiers, is built from billions of these exact computations. This project
-implements the fundamental atom of machine intelligence directly in silicon,
-with no CPU, no software, no operating system — just logic gates switching
-at the speed of electrons.
+The 8 product bits are summed using a tree of half-adders and full-adders producing a 4-bit count S[n] between 0 and 8.
 
-### Why is the pipeline the ambitious part?
+```
+S[n] = p[0] + p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7]
+```
 
-Without the pipeline, the circuit would need to finish all four stages within
-a single clock cycle — meaning the clock speed is bottlenecked by the slowest
-stage (the adder tree). With the pipeline registers between each stage, four
-different input samples are processed simultaneously:
+**Stage 3 — Threshold comparator**
 
-    Cycle 1:  Sample A -> Stage 1
-    Cycle 2:  Sample A -> Stage 2,  Sample B -> Stage 1
-    Cycle 3:  Sample A -> Stage 3,  Sample B -> Stage 2,  Sample C -> Stage 1
-    Cycle 4:  Sample A -> Stage 4,  Sample B -> Stage 3,  Sample C -> Stage 2,  Sample D -> Stage 1
-    Cycle 5:  Result A out!         Sample B -> Stage 4,  ...
+```
+y[n] = 1  if  S[n] >= theta[n]
+y[n] = 0  otherwise
+```
 
-After the initial 4-cycle warmup, a new classification result is produced
-on every single clock tick.
+### Why 16 neurons in parallel?
 
-### Pipeline Architecture Diagram
+All 16 neurons share the same 8-bit input bus and compute simultaneously. Each neuron has its own independent weight register (8 bits) and threshold register (4 bits), so each can be programmed to recognise a different pattern. The result is a 16-bit output vector answering 16 different yes/no questions about the input in a single clock cycle.
 
-![Pipeline Architecture](pipelined_perceptron_architecture.svg)
+### Why is this AI?
 
-## Pin Mapping
+This circuit implements the McCulloch-Pitts neuron (1943) — the mathematical model that founded neural networks. Every modern AI system is built from billions of this computation. Binary Neural Networks (BNNs) are an active area of research for ultra-low-power AI inference at the edge. By binarising weights and activations to {0,1}, multiply-accumulate reduces to AND+popcount — orders of magnitude cheaper in silicon area and power than floating-point arithmetic.
+
+---
+
+## Pin mapping
 
 | Pin | Direction | Function |
 |-----|-----------|----------|
-| clk | in | System clock |
-| rst_n | in | Active-low reset |
-| ui_in[7:0] | in | Input features or load data |
-| uio[0] | in | Mode: 0 = load weights, 1 = infer |
-| uo_out[7] | out | fire - classification result |
-| uo_out[3:0] | out | sum[3:0] - raw weighted sum |
+| `clk` | in | System clock |
+| `rst_n` | in | Active-low reset |
+| `ui_in[7:0]` | in | Input features (infer) or load data (load) |
+| `uio_in[0]` | in | Mode: 0=load, 1=infer |
+| `uio_in[1]` | in | Target: 0=weights, 1=thresholds |
+| `uio_in[5:2]` | in | Neuron select 0–15 |
+| `uo_out[7:0]` | out | Fire signals neurons 0–7 |
+| `uio_out[7:0]` | out | Fire signals neurons 8–15 |
+
+---
 
 ## How to test
 
-### Step 1 - Load weights
-Set ui_in[7:0] to desired weight pattern. Clock once to latch into weight registers.
-Example: 11111111 means all features are equally important.
+### Step 1 — Reset
 
-### Step 2 - Load threshold
-Set ui_in[3:0] to desired threshold value. Clock once to latch.
-Example: 00000100 sets theta = 4, meaning at least 4 features must match.
+Assert rst_n low then high. All weights clear to 0, thresholds reset to 4.
 
-### Step 3 - Run inference
-Set ui_in[7:0] to the input feature vector.
-After 4 clock cycles, uo_out[7] reflects the classification:
-- fire = 1 means input pattern matches (S >= theta)
-- fire = 0 means input pattern does not match (S < theta)
+### Step 2 — Load weights
+
+For each neuron n (0–15):
+1. Set uio_in[0]=0 (load mode), uio_in[1]=0 (weights)
+2. Set uio_in[5:2]=n (select neuron)
+3. Set ui_in[7:0] = weight pattern
+4. Pulse clock
+
+### Step 3 — Load thresholds
+
+For each neuron n (0–15):
+1. Set uio_in[0]=0 (load mode), uio_in[1]=1 (thresholds)
+2. Set uio_in[5:2]=n (select neuron)
+3. Set ui_in[3:0] = threshold value (0–8)
+4. Pulse clock
+
+### Step 4 — Inference
+
+1. Set uio_in[0]=1 (infer mode)
+2. Set ui_in[7:0] = input feature vector
+3. Read uo_out[7:0] and uio_out[7:0] for 16-bit result
 
 ### Example
 
-With weights = 11111111 and threshold theta = 4:
-- Input 11111111 gives S = 8, 8 >= 4, fire = 1
-- Input 11100000 gives S = 3, 3 < 4,  fire = 0
-- Input 11110000 gives S = 4, 4 >= 4, fire = 1
+```
+weights[0]    = 0b11111111  (all features equally weighted)
+thresholds[0] = 5           (fire if 5 or more features active)
+
+Input 0b11111100 → S=6, 6>=5 → uo_out[0]=1  (fires)
+Input 0b11110000 → S=4, 4<5  → uo_out[0]=0  (silent)
+```
+
+### Training weights in Python
+
+```python
+from perceptron_trainer import train_perceptron, generate_load_instructions
+import numpy as np
+
+X = np.random.randint(0, 2, (200, 8))
+y = (X.sum(axis=1) > 4).astype(int)
+
+weights, threshold, _ = train_perceptron(X, y, epochs=100)
+generate_load_instructions(weights, threshold)
+```
+
+---
 
 ## External hardware
 
-No external hardware required.
+No external hardware required. A microcontroller (Raspberry Pi Pico, Arduino) can load trained weights programmatically via the ui_in and uio_in pins.
