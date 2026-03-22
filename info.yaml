@@ -7,6 +7,9 @@ project:
   language:    "Verilog"
   clock_hz:    10000000
   tiles:       "1x1"
+  top_module:  "tt_um_dean_foulds_perceptron"
+  source_files:
+    - "tt_um_dean_foulds_perceptron.v"
 
 pinout:
   ui[0]: "x0 - input feature bit 0"
