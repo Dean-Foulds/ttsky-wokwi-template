@@ -1,6 +1,6 @@
 # Version 2 — Systolic Binary Neural Network Accelerator
 
-## Why I upgraded
+## Why we upgraded
 
 Version 1 was a valid binary perceptron — it worked, it synthesised, and it produced correct classifications. But it had a fundamental limitation: it duplicated the same hardware 16 times. Every neuron had its own AND array, its own adder tree, its own comparator. This is expensive in silicon.
 
@@ -155,7 +155,7 @@ BNNs replace 32-bit floating point multiply-accumulate with 1-bit XNOR and integ
 
 This makes BNNs particularly attractive for edge AI — deploying neural networks in resource-constrained devices like sensors, cameras, hearing aids, and microcontrollers where battery life and silicon area are the binding constraints.
 
-My chip implements this principle directly in custom silicon, which is the most efficient possible form of BNN inference.
+Your chip implements this principle directly in custom silicon, which is the most efficient possible form of BNN inference.
 
 ---
 
