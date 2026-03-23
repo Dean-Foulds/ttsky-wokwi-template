@@ -103,26 +103,26 @@ module tt_um_dean_foulds_ai_accelerator (
     assign feat[6] = ui_in[0] & ui_in[7];
     assign feat[7] = ui_in[2] ^ ui_in[6];
 
-    reg [3:0] bit_index;
+    reg [2:0] bit_index;
     reg [3:0] acc [0:15];
 
     wire feature_bit = feat[bit_index];
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            bit_index <= 4'd0;
+            bit_index <= 3'd0;
             for (i = 0; i < 16; i = i + 1)
                 acc[i] <= 4'd0;
         end else if (mode) begin
             for (i = 0; i < 16; i = i + 1)
                 acc[i] <= acc[i] + {3'b0, ~(weights[i][bit_index] ^ feature_bit)};
 
-            if (bit_index == 4'd7) begin
-                bit_index <= 4'd0;
+            if (bit_index == 3'd7) begin
+                bit_index <= 3'd0;
                 for (i = 0; i < 16; i = i + 1)
                     acc[i] <= 4'd0;
             end else begin
-                bit_index <= bit_index + 4'd1;
+                bit_index <= bit_index + 3'd1;
             end
         end
     end
