@@ -1,15 +1,3 @@
-/*
- * 16-Neuron Systolic Binary Neural Network Accelerator - v2
- * Dean Foulds - Tiny Tapeout
- *
- * Improvements over v1:
- *   1. XNOR instead of AND  - true BNN dot product
- *   2. Systolic compute     - 1 bit per cycle over 8 cycles
- *   3. Signed bias          - replaces threshold
- *   4. Feature expansion    - XOR/AND feature engineering
- *   5. Balanced popcount    - tree structure
- */
-
 `default_nettype none
 
 module tt_um_dean_foulds_ai_accelerator (
@@ -32,7 +20,6 @@ module tt_um_dean_foulds_ai_accelerator (
     reg [7:0]        weights [0:15];
     reg signed [4:0] bias    [0:15];
 
-    // Weight and bias loading
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             weights[0]  <= 8'b0; weights[1]  <= 8'b0;
@@ -59,7 +46,6 @@ module tt_um_dean_foulds_ai_accelerator (
         end
     end
 
-    // Feature expansion
     wire [7:0] feat;
     assign feat[0] = ui_in[0];
     assign feat[1] = ui_in[1];
@@ -70,15 +56,51 @@ module tt_um_dean_foulds_ai_accelerator (
     assign feat[6] = ui_in[0] & ui_in[7];
     assign feat[7] = ui_in[2] ^ ui_in[6];
 
-    // Systolic dot product engine
     reg [2:0] bit_index;
     reg [3:0] acc [0:15];
 
     wire feature_bit = feat[bit_index];
 
+    wire xnor0  = ~(weights[0] [bit_index] ^ feature_bit);
+    wire xnor1  = ~(weights[1] [bit_index] ^ feature_bit);
+    wire xnor2  = ~(weights[2] [bit_index] ^ feature_bit);
+    wire xnor3  = ~(weights[3] [bit_index] ^ feature_bit);
+    wire xnor4  = ~(weights[4] [bit_index] ^ feature_bit);
+    wire xnor5  = ~(weights[5] [bit_index] ^ feature_bit);
+    wire xnor6  = ~(weights[6] [bit_index] ^ feature_bit);
+    wire xnor7  = ~(weights[7] [bit_index] ^ feature_bit);
+    wire xnor8  = ~(weights[8] [bit_index] ^ feature_bit);
+    wire xnor9  = ~(weights[9] [bit_index] ^ feature_bit);
+    wire xnor10 = ~(weights[10][bit_index] ^ feature_bit);
+    wire xnor11 = ~(weights[11][bit_index] ^ feature_bit);
+    wire xnor12 = ~(weights[12][bit_index] ^ feature_bit);
+    wire xnor13 = ~(weights[13][bit_index] ^ feature_bit);
+    wire xnor14 = ~(weights[14][bit_index] ^ feature_bit);
+    wire xnor15 = ~(weights[15][bit_index] ^ feature_bit);
+
+    wire [3:0] acc_next0  = acc[0]  + {3'b0, xnor0};
+    wire [3:0] acc_next1  = acc[1]  + {3'b0, xnor1};
+    wire [3:0] acc_next2  = acc[2]  + {3'b0, xnor2};
+    wire [3:0] acc_next3  = acc[3]  + {3'b0, xnor3};
+    wire [3:0] acc_next4  = acc[4]  + {3'b0, xnor4};
+    wire [3:0] acc_next5  = acc[5]  + {3'b0, xnor5};
+    wire [3:0] acc_next6  = acc[6]  + {3'b0, xnor6};
+    wire [3:0] acc_next7  = acc[7]  + {3'b0, xnor7};
+    wire [3:0] acc_next8  = acc[8]  + {3'b0, xnor8};
+    wire [3:0] acc_next9  = acc[9]  + {3'b0, xnor9};
+    wire [3:0] acc_next10 = acc[10] + {3'b0, xnor10};
+    wire [3:0] acc_next11 = acc[11] + {3'b0, xnor11};
+    wire [3:0] acc_next12 = acc[12] + {3'b0, xnor12};
+    wire [3:0] acc_next13 = acc[13] + {3'b0, xnor13};
+    wire [3:0] acc_next14 = acc[14] + {3'b0, xnor14};
+    wire [3:0] acc_next15 = acc[15] + {3'b0, xnor15};
+
+    reg [15:0] fire_reg;
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             bit_index <= 3'd0;
+            fire_reg  <= 16'b0;
             acc[0]  <= 4'd0; acc[1]  <= 4'd0;
             acc[2]  <= 4'd0; acc[3]  <= 4'd0;
             acc[4]  <= 4'd0; acc[5]  <= 4'd0;
@@ -88,25 +110,24 @@ module tt_um_dean_foulds_ai_accelerator (
             acc[12] <= 4'd0; acc[13] <= 4'd0;
             acc[14] <= 4'd0; acc[15] <= 4'd0;
         end else if (mode) begin
-            acc[0]  <= acc[0]  + {3'b0, ~(weights[0] [bit_index] ^ feature_bit)};
-            acc[1]  <= acc[1]  + {3'b0, ~(weights[1] [bit_index] ^ feature_bit)};
-            acc[2]  <= acc[2]  + {3'b0, ~(weights[2] [bit_index] ^ feature_bit)};
-            acc[3]  <= acc[3]  + {3'b0, ~(weights[3] [bit_index] ^ feature_bit)};
-            acc[4]  <= acc[4]  + {3'b0, ~(weights[4] [bit_index] ^ feature_bit)};
-            acc[5]  <= acc[5]  + {3'b0, ~(weights[5] [bit_index] ^ feature_bit)};
-            acc[6]  <= acc[6]  + {3'b0, ~(weights[6] [bit_index] ^ feature_bit)};
-            acc[7]  <= acc[7]  + {3'b0, ~(weights[7] [bit_index] ^ feature_bit)};
-            acc[8]  <= acc[8]  + {3'b0, ~(weights[8] [bit_index] ^ feature_bit)};
-            acc[9]  <= acc[9]  + {3'b0, ~(weights[9] [bit_index] ^ feature_bit)};
-            acc[10] <= acc[10] + {3'b0, ~(weights[10][bit_index] ^ feature_bit)};
-            acc[11] <= acc[11] + {3'b0, ~(weights[11][bit_index] ^ feature_bit)};
-            acc[12] <= acc[12] + {3'b0, ~(weights[12][bit_index] ^ feature_bit)};
-            acc[13] <= acc[13] + {3'b0, ~(weights[13][bit_index] ^ feature_bit)};
-            acc[14] <= acc[14] + {3'b0, ~(weights[14][bit_index] ^ feature_bit)};
-            acc[15] <= acc[15] + {3'b0, ~(weights[15][bit_index] ^ feature_bit)};
-
             if (bit_index == 3'd7) begin
                 bit_index <= 3'd0;
+                fire_reg[0]  <= ($signed({1'b0, acc_next0})  + bias[0])  >= 0;
+                fire_reg[1]  <= ($signed({1'b0, acc_next1})  + bias[1])  >= 0;
+                fire_reg[2]  <= ($signed({1'b0, acc_next2})  + bias[2])  >= 0;
+                fire_reg[3]  <= ($signed({1'b0, acc_next3})  + bias[3])  >= 0;
+                fire_reg[4]  <= ($signed({1'b0, acc_next4})  + bias[4])  >= 0;
+                fire_reg[5]  <= ($signed({1'b0, acc_next5})  + bias[5])  >= 0;
+                fire_reg[6]  <= ($signed({1'b0, acc_next6})  + bias[6])  >= 0;
+                fire_reg[7]  <= ($signed({1'b0, acc_next7})  + bias[7])  >= 0;
+                fire_reg[8]  <= ($signed({1'b0, acc_next8})  + bias[8])  >= 0;
+                fire_reg[9]  <= ($signed({1'b0, acc_next9})  + bias[9])  >= 0;
+                fire_reg[10] <= ($signed({1'b0, acc_next10}) + bias[10]) >= 0;
+                fire_reg[11] <= ($signed({1'b0, acc_next11}) + bias[11]) >= 0;
+                fire_reg[12] <= ($signed({1'b0, acc_next12}) + bias[12]) >= 0;
+                fire_reg[13] <= ($signed({1'b0, acc_next13}) + bias[13]) >= 0;
+                fire_reg[14] <= ($signed({1'b0, acc_next14}) + bias[14]) >= 0;
+                fire_reg[15] <= ($signed({1'b0, acc_next15}) + bias[15]) >= 0;
                 acc[0]  <= 4'd0; acc[1]  <= 4'd0;
                 acc[2]  <= 4'd0; acc[3]  <= 4'd0;
                 acc[4]  <= 4'd0; acc[5]  <= 4'd0;
@@ -117,23 +138,19 @@ module tt_um_dean_foulds_ai_accelerator (
                 acc[14] <= 4'd0; acc[15] <= 4'd0;
             end else begin
                 bit_index <= bit_index + 3'd1;
+                acc[0]  <= acc_next0;  acc[1]  <= acc_next1;
+                acc[2]  <= acc_next2;  acc[3]  <= acc_next3;
+                acc[4]  <= acc_next4;  acc[5]  <= acc_next5;
+                acc[6]  <= acc_next6;  acc[7]  <= acc_next7;
+                acc[8]  <= acc_next8;  acc[9]  <= acc_next9;
+                acc[10] <= acc_next10; acc[11] <= acc_next11;
+                acc[12] <= acc_next12; acc[13] <= acc_next13;
+                acc[14] <= acc_next14; acc[15] <= acc_next15;
             end
         end
     end
 
-    // Neuron fire decisions
-    wire fire [0:15];
-    genvar n;
-    generate
-        for (n = 0; n < 16; n = n + 1) begin : neuron
-            assign fire[n] = ($signed({1'b0, acc[n]}) + bias[n]) >= 0;
-        end
-    endgenerate
-
-    assign uo_out  = {fire[7],  fire[6],  fire[5],  fire[4],
-                      fire[3],  fire[2],  fire[1],  fire[0]};
-
-    assign uio_out = {fire[15], fire[14], fire[13], fire[12],
-                      fire[11], fire[10], fire[9],  fire[8]};
+    assign uo_out  = fire_reg[7:0];
+    assign uio_out = fire_reg[15:8];
 
 endmodule
