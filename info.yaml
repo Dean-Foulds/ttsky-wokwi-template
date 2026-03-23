@@ -1,15 +1,15 @@
 project:
   wokwi_id:    0
-  title:       "16-Neuron Binary Neural Network"
+  title: "Systolic Binary Neural Network Accelerator"
   author:      "Dean Foulds"
   discord:     ""
-  description: "A 16-neuron binary neural network inference layer. Each neuron has 8 programmable binary weights and a 4-bit threshold, processing an 8-bit input vector simultaneously to produce a 16-bit classification output."
+  description: "V2 systolic 16-neuron BNN accelerator. XNOR dot product engine, hardware feature expansion, signed bias, balanced popcount tree. 8-cycle systolic compute reuses hardware for smaller silicon footprint."
   language:    "Verilog"
   clock_hz:    10000000
   tiles:       "1x2"
-  top_module:  "tt_um_dean_foulds_perceptron"
+  top_module:  "tt_um_dean_foulds_ai_accelerator"
   source_files:
-    - "tt_um_dean_foulds_perceptron.v"
+    - "tt_um_dean_foulds_ai_accelerator.v"
 
 pinout:
   ui[0]: "x0 - input feature bit 0"
