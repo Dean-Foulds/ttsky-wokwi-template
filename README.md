@@ -20,3 +20,7 @@ Visit https://tinytapeout.com to learn more.
 - [Digital design lessons](https://tinytapeout.com/digital_design/)
 - [Join the community](https://tinytapeout.com/discord)
 - [Submit your design](https://app.tinytapeout.com/)
+
+
+iverilog -g2012 -o sim_tb tt_um_dean_foulds_ai_accelerator.v tb_tt_um_dean_foulds.v
+vvp sim_tb

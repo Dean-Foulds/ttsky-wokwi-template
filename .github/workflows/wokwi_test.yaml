@@ -35,14 +35,7 @@ jobs:
       - name: Fetch the truth table
         run: ./tt/tt_tool.py --create-user-config
 
-      - name: Check for truth table existence
-        id: check_files
-        uses: andstor/file-existence-action@v3
-        with:
-          files: "test/truthtable.md"
-
       - name: Run tests
-        if: steps.check_files.outputs.files_exists == 'true'
         run: |
           cd test
           make clean
