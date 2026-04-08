@@ -67,3 +67,5 @@ generate_load_instructions(weights, bias)
 ## External hardware
 
 No external hardware required. A Raspberry Pi or Arduino can load trained weights and run inference via the `ui_in` and `uio_in` pins. See [info_v2.md](info_v2.md) for full Raspberry Pi wiring and Python code.
+
+## End
