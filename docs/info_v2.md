@@ -1,6 +1,6 @@
 # Version 2 — Systolic Binary Neural Network Accelerator
 
-## Why we upgraded
+## Why upgraded?
 
 Version 1 was a valid binary perceptron — it worked, it synthesised, and it produced correct classifications. But it had a fundamental limitation: it duplicated the same hardware 16 times. Every neuron had its own AND array, its own adder tree, its own comparator. This is expensive in silicon.
 
