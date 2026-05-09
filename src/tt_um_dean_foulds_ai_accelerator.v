@@ -13,7 +13,7 @@ module tt_um_dean_foulds_ai_accelerator (
 
     assign uio_oe = 8'hFF;
 
-    wire _unused = &{uio_in[7:6], 1'b0};
+    wire soft_rst = uio_in[7] | uio_in[6];
 
     wire        mode   = uio_in[0];
     wire        target = uio_in[1];
@@ -23,7 +23,7 @@ module tt_um_dean_foulds_ai_accelerator (
     reg signed [4:0] bias    [0:15];
 
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
+        if (!rst_n || soft_rst) begin
             weights[0]  <= 8'b0; weights[1]  <= 8'b0;
             weights[2]  <= 8'b0; weights[3]  <= 8'b0;
             weights[4]  <= 8'b0; weights[5]  <= 8'b0;
@@ -100,7 +100,7 @@ module tt_um_dean_foulds_ai_accelerator (
     reg [15:0] fire_reg;
 
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
+        if (!rst_n || soft_rst) begin
             bit_index <= 3'd0;
             fire_reg  <= 16'b0;
             acc[0]  <= 4'd0; acc[1]  <= 4'd0;
