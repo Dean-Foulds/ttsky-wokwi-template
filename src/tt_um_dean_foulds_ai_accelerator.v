@@ -13,6 +13,8 @@ module tt_um_dean_foulds_ai_accelerator (
 
     assign uio_oe = 8'hFF;
 
+    wire _unused = &{uio_in[7:6], 1'b0};
+
     wire        mode   = uio_in[0];
     wire        target = uio_in[1];
     wire [3:0]  sel    = uio_in[5:2];
@@ -150,7 +152,7 @@ module tt_um_dean_foulds_ai_accelerator (
         end
     end
 
-    assign uo_out  = fire_reg[7:0];
-    assign uio_out = fire_reg[15:8];
+    assign uo_out  = ena ? fire_reg[7:0]  : 8'b0;
+    assign uio_out = ena ? fire_reg[15:8] : 8'b0;
 
 endmodule
