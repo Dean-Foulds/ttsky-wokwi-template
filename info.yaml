@@ -6,7 +6,7 @@ project:
   description: "V2 systolic 16-neuron BNN accelerator. XNOR dot product engine, hardware feature expansion, signed bias, balanced popcount tree. 8-cycle systolic compute reuses hardware for smaller silicon footprint."
   language:    "Verilog"
   clock_hz:    10000000
-  tiles:       "1x2"
+  tiles:       "1x1"
   top_module:  "tt_um_dean_foulds_ai_accelerator"
   source_files:
     - "tt_um_dean_foulds_ai_accelerator.v"
