@@ -2,7 +2,7 @@
 
 ## What is this chip?
 
-This chip implements a **16-neuron Binary Neural Network (BNN) inference accelerator** in silicon. It classifies an 8-bit input vector using 16 independently programmable neurons, each with learnable binary weights and a signed bias. The design is inspired by the systolic array architecture invented by H.T. Kung at Carnegie Mellon University in 1978, and implements the XNOR-popcount computation that is the standard in modern BNN research.
+This chip implements an **8-neuron Binary Neural Network (BNN) inference accelerator** in silicon. It classifies an 8-bit input vector using 8 independently programmable neurons, each with learnable binary weights and a signed bias. The design is inspired by the systolic array architecture invented by H.T. Kung at Carnegie Mellon University in 1978, and implements the XNOR-popcount computation that is the standard in modern BNN research.
 
 ![Architecture](bnn_architecture.svg)
 
@@ -20,7 +20,7 @@ y[n]    = 0   otherwise
 The compute engine processes one bit per clock cycle over 8 cycles (systolic), reusing hardware rather than duplicating it 16 times. This reduces silicon area significantly compared to a fully parallel design.
 
 See the detailed documentation:
-- [Version 1 — Parallel 16-neuron perceptron](info_v1.md)
+- [Version 1 — Parallel 16-neuron perceptron (historical)](info_v1.md)
 - [Version 2 — Systolic BNN accelerator with upgrade history](info_v2.md)
 
 ## Pin mapping
@@ -32,20 +32,23 @@ See the detailed documentation:
 | `ui_in[7:0]` | in | Input features (infer) or load data (load) |
 | `uio_in[0]` | in | Mode: 0=load, 1=infer |
 | `uio_in[1]` | in | Target: 0=weights, 1=bias |
-| `uio_in[5:2]` | in | Neuron select 0–15 |
+| `uio_in[4:2]` | in | Neuron select 0–7 |
+| `uio_in[5]` | in | Feature XOR input (feat[5]) |
+| `uio_in[6]` | in | Feature XOR input (feat[6]) |
+| `uio_in[7]` | in | Feature XOR input (feat[7]) |
 | `uo_out[7:0]` | out | Fire signals neurons 0–7 |
-| `uio_out[7:0]` | out | Fire signals neurons 8–15 |
+| `uio_out[7:0]` | out | Unused (tied to 0) |
 
 ## How to test
 
 ### Load weights for neuron n
-1. Set `uio_in[0]=0`, `uio_in[1]=0`, `uio_in[5:2]=n`
+1. Set `uio_in[0]=0`, `uio_in[1]=0`, `uio_in[4:2]=n`
 2. Set `ui_in[7:0]` = 8-bit weight pattern
 3. Pulse clock
 
 ### Load bias for neuron n
-1. Set `uio_in[0]=0`, `uio_in[1]=1`, `uio_in[5:2]=n`
-2. Set `ui_in[3:0]` = bias magnitude, `ui_in[4]` = sign (1=negative)
+1. Set `uio_in[0]=0`, `uio_in[1]=1`, `uio_in[4:2]=n`
+2. Set `ui_in[3:0]` = signed bias (two's complement, sign-extended to 5 bits)
 3. Pulse clock
 
 ### Run inference
