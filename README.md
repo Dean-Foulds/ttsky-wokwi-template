@@ -1,9 +1,9 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg)
 
-# 16-Neuron Binary Neural Network
+# 8-Neuron Binary Neural Network
 
-A 16-neuron binary neural network inference layer implemented in silicon.
-Each neuron has 8 programmable binary weights and a 4-bit threshold.
+An 8-neuron binary neural network inference layer implemented in silicon.
+Each neuron has 8 programmable binary weights and a signed 5-bit bias.
 
 - [Read the project documentation](docs/info.md)
 
